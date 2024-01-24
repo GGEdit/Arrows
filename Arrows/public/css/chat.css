@@ -1,5 +1,5 @@
-#back-button{
-    background-color: transparent;
+#clear-chat-room{
+    display: none;
 }
 .chat-talk {
     overflow: hidden;
@@ -17,7 +17,8 @@
 }
 .chat-talk .talk-icon img {
     max-width: 100%;
-    height: auto;
+    width: 46px;
+    height: 46px;
     vertical-align: bottom;
     border: 2px solid #fff;
     border-radius: 50%;
@@ -57,9 +58,13 @@
     height: 60px;
 }
 .input-area{
-    height: 195px;
+    max-height: 300px;
 }
 .chat-img{
     width: auto;
     height: 100px;
+}
+#content{
+    height: 20px;
+    line-height: 20px;
 }

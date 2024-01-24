@@ -10,29 +10,36 @@ class Message {
     setHandler(){
 
         $(window).on('refresh resize', (e)=> {
-            // サイズ判定
+            // PC・モバイル用表示設定
             const ww = $(window).width();
             let regHeight = 0;
             if(ww >= 768){
                 this.deviceType = DeviceType.PC;
                 regHeight = 100;
+                $('.room-list').show();
+                $('#chat-room').show();
             }
             else{
                 this.deviceType = DeviceType.MOBILE;
                 regHeight = 160;
+                if(roomList.currentOpenRoomId == null){
+                    $('.room-list').show();
+                    $('#chat-room').hide();
+                }
+                else{
+                    $('.room-list').hide();
+                    $('#chat-room').show();
+                }
             }
-
+            // 高さ調整
             const winH = $(window).height() - regHeight;
             $('#chat-room').outerHeight(winH);
             $('.room-list').outerHeight(winH);
-            
-            // チャット画面でスクロールを最下部へ移動
-            srcollBottomObj($('#chat'));
-
-            this.showWindow();
+            // 戻るボタン表示
+            $('#clear-chat-room').toggle(roomList.currentOpenRoomId != null);
         });
 
-        $('#back-button').on('click', (e) => {
+        $('#clear-chat-room').on('click', (e) => {
             roomList.currentOpenRoomId = null;
             $('#chat').empty();
             $('#chat-room-name').text(`チャットルームを選択してくだい`);
@@ -66,6 +73,18 @@ class Message {
             if(e.shiftKey && e.keyCode === 13){
                 this.postMessage();
                 return false;
+            }
+        });
+
+        $('#content').on('input', (e) => {
+            const isScrolledChatArea = isScrollBottom($('#chat'));
+            const lineHeight = parseInt($(e.target).css('lineHeight'));
+            const lines = ($(e.target).val() + '\n').match(/\n/g).length;
+            const setHeight = lines > 10 ? 200 : lineHeight * lines;
+            $(e.target).height(setHeight);
+            // チャットエリアが最下部の時は追従させる
+            if(isScrolledChatArea){
+                srcollBottomObj($('#chat'));
             }
         });
 
@@ -104,7 +123,7 @@ class Message {
                         chatHtml += `
                             <p class="chat-talk ${user.id == authUser.id ? 'mytalk' : ''}">
                                 <span class="talk-icon">
-                                    <img src="${user.image_url}" width="46" height="46"/>
+                                    <img src="${user.image_url}"/>
                                 </span>
                                 <span class="talk-user text-gray">${user.name}</span>
                                 <span class="talk-timestamp text-gray">${toTime(message.created_at)}</span>
@@ -124,23 +143,6 @@ class Message {
         ioSocket.on("update", (data) => {
             this.appendMessage(data)
         });
-    }
-
-    showWindow(){
-        if(this.deviceType == DeviceType.PC){
-            $('.room-list').show();
-            $('#chat-room').show();
-        }
-        else if(this.deviceType == DeviceType.MOBILE){
-            if(roomList.currentOpenRoomId == null){
-                $('.room-list').show();
-                $('#chat-room').hide();
-            }
-            else{
-                $('.room-list').hide();
-                $('#chat-room').show();
-            }
-        }
     }
 
     postMessage(){
@@ -202,7 +204,7 @@ class Message {
         chatHtml += `
             <p class="chat-talk ${user.id == authUser.id ? 'mytalk' : ''}">
                 <span class="talk-icon">
-                    <img src="${user.image_url}" width="46" height="46"/>
+                    <img src="${user.image_url}"/>
                 </span>
                 <span class="talk-user text-gray">${user.name}</span>
                 <span class="talk-timestamp text-gray">${toTime(data.created_at)}</span>

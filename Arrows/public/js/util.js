@@ -5,6 +5,11 @@ function srcollBottomObj($element){
     $element.scrollTop($element.get(0).scrollHeight);
 }
 
+function isScrollBottom($element){
+    const $obj = $element.get(0);
+    return ($obj.scrollHeight - $obj.scrollTop) / $obj.offsetHeight == 1
+}
+
 function replaceNewLineCode(str){
     if(str == null){
         return '';

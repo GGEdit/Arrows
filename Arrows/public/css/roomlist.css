@@ -1,0 +1,36 @@
+.room-card {
+    padding: 7px;
+    margin-bottom:3px;
+}
+
+.room-name {
+    font-weight: bold;
+}
+
+.latest-message {
+    color: #6c757d;
+    overflow: hidden;
+    width: 200px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+}
+
+.room-card:hover:not(.room-selected){
+    background-color: rgb(29,161,242);
+    border-radius: 5px;
+}
+
+.room-card:hover:not(.room-selected) p{
+    color: white;
+}
+
+.room-selected {
+    background-color: rgb(29,161,242);
+    border: solid 1px;
+    border-radius: 5px;
+}
+
+.room-selected p {
+    color: white;
+}

@@ -1,17 +1,23 @@
-function getMessage(roomId){
-    let deferred = new $.Deferred();
+function getMessageRequest(roomId){
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
-    $.ajax({
-        url: `/message/${roomId}`,
-        method: 'GET',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        success: function(data){
-            deferred.resolve(data);
-        }
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: `/message/${roomId}`,
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            processData: false,
+            contentType: false
+        }).then(
+            function(result){
+                resolve(result);
+            },
+            function(){
+                reject();
+            }
+        )
     });
-    return deferred;
 }
 
 function postMessageRequest(roomId, content, attachment = null){
@@ -25,22 +31,77 @@ function postMessageRequest(roomId, content, attachment = null){
     }
     fd.append('room_id', roomId);
     fd.append('content', content);
-    $.ajax({
-        url: '/message',
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-        },
-        data: fd,
-        processData: false,
-        contentType: false,
-        success: function(response){
-            if(response.message == 'my blocked'){
-                alert('このユーザーをブロックしているため、送信できませんでした');
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: '/message',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            data: fd,
+            processData: false,
+            contentType: false,
+        }).then(
+            function(result){
+                resolve(result);
+            },
+            function(){
+                reject();
             }
-            else if(response.message == 'blocked'){
-                alert('あなたはブロックされているため、送信できませんでした');
+        )
+    });
+}
+
+function updateMessageRequest(messageId, content){
+    if(content == "" || content == null){
+        return;
+    }
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    const fd = new FormData();
+    fd.append('content', content);
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: `/message/${messageId}`,
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            data: fd,
+            processData: false,
+            contentType: false,
+        }).then(
+            function(result){
+                resolve(result);
+            },
+            function(){
+                reject();
             }
-        }
+        )
+    });
+}
+
+function deleteMessageRequest(messageId){
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: `/message/${messageId}`,
+            type: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            dataType: "JSON",
+            data: {
+                '_method': 'DELETE'
+            },
+            processData: false,
+            contentType: false
+        }).then(
+            function(result){
+                resolve(result);
+            },
+            function(){
+                reject();
+            }
+        )
     });
 }

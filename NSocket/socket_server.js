@@ -10,8 +10,16 @@ function is_json(data) {
 	return true;
 }
 
-function emit_update_chat(data){
+function emitCreateChat(data){
+    io.to(data.room_name).emit('create', data.message)
+}
+
+function emitUpdateChat(data){
     io.to(data.room_name).emit('update', data.message)
+}
+
+function emitDeleteChat(data){
+    io.to(data.room_name).emit('delete', data)
 }
 
 function requestListener(req, res){
@@ -29,8 +37,14 @@ function requestListener(req, res){
             // LaravelからPOSTされたデータを処理する
             const data = JSON.parse(resData);
             if(req.method === 'POST'){
-                if(req.url === '/emit_update_chat'){
-                    emit_update_chat(data);
+                if(req.url === '/emit_create_chat'){
+                    emitCreateChat(data);
+                }
+                else if(req.url === '/emit_update_chat'){
+                    emitUpdateChat(data);
+                }
+                else if(req.url === '/emit_delete_chat'){
+                    emitDeleteChat(data);
                 }
             }
         }

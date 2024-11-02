@@ -3,34 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-    <script src="/js/app.js" defer></script>
-    @auth
-    <script src="{{ $app_info['nsocket_server'] }}/socket.io/socket.io.js"></script>
-    <script src="/js/api/message.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/api/room.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/common.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/user.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/room.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/message.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/util.js?{{ $app_info['app_version'] }}"></script>
-    <script src="/js/main.js?{{ $app_info['app_version'] }}"></script>
-    @endauth
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-    <!-- Styles -->
-    <link rel ="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-    @auth
-    <link href="/css/common.css?{{ $app_info['app_version'] }}" rel="stylesheet">
-    <link href="/css/chat.css?{{ $app_info['app_version'] }}" rel="stylesheet">
-    <link href="/css/roomlist.css?{{ $app_info['app_version'] }}" rel="stylesheet">
-    @endauth
+    @include('layouts.import')
 </head>
 <body>
     <div id="app">

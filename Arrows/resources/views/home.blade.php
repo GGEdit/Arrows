@@ -9,7 +9,7 @@
                     <i class="fas fa-list-ul"></i>&nbsp;&nbsp;
                     <strong>ルームリスト</strong>
                 </div>
-                <div class="card-body overflow-auto">
+                <div class="card-body overflow-auto" id="room-list-card">
                     <div class="">
                         <input type="text" class="form-control font-awesome" id="room-list-search-box" placeholder="&#xf002; 検索">
                     </div>
@@ -29,10 +29,17 @@
                 <div class="card-footer text-muted input-area">
                     <div class="row gy-1 py-2">
                         <div class="col-md-12">
-                            <textarea class="form-control" id="content" placeholder="メッセージを入力..."></textarea>
+                            <textarea class="form-control" id="content" placeholder="ここにメッセージ内容を入力&#13;(Shift + Enterキーで送信)"></textarea>
                         </div>
+                        <div class="col-md-12" id="edit-annotation">
+                            <span>
+                                Escキーで<a id="edit-cancel-link" href="javascript:void(0);">キャンセル</a>
+                                /
+                                Shift + Enterキーで<a id="edit-submit-link" href="javascript:void(0);">保存</a>
+                            </span>
+                        </div>                        
                         <div class="col-md-12">
-                            <img src="" id="attachment-preview" style="display:none;">
+                            <img src="" id="attachment-preview">
                         </div>
                         <div class="col-md-12">
                             <div class="float-start">

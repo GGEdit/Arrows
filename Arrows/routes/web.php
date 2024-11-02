@@ -32,6 +32,8 @@ Route::group(['middleware' => ['auth']], function(){
 
     Route::get('/message/{id}', [MessageController::class, 'get']);
     Route::post('/message', [MessageController::class, 'store']);
+    Route::post('/message/{id}', [MessageController::class, 'update']);
+    Route::delete('/message/{id}', [MessageController::class, 'delete']);
 
     Route::get('/account', [UserController::class, 'index']);
     Route::post('/account/update', [UserController::class, 'update']);

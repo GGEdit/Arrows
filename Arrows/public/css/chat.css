@@ -1,10 +1,16 @@
+#chat {
+    background-color: #EBEFF4;
+    padding: 1em 1em 2em 1em;
+}
 #clear-chat-room{
     display: none;
 }
 .chat-talk {
     overflow: hidden;
-    margin: 0 0 1em 0;
-    padding: 0;
+    padding: 1em;
+    margin: 0.5em 0;
+    position: relative;
+    overflow: visible;
 }
 .chat-talk span {
     display: block;
@@ -29,7 +35,7 @@
     width: auto;
     min-height: 50px;
     border-radius: 10px;
-    background-color: #e9ecef;
+    background-color:aliceblue;
     margin: 21px auto 0 58px;
     padding: 1em;
 }
@@ -50,12 +56,42 @@
 .chat-talk.mytalk .talk-content:before {
     border-right-color: rgb(29,161,242);
 }
+.chat-talk.mytalk:hover {
+    background-color: #fff;
+}
+.chat-talk.mytalk:hover .chat-actions {
+    display: block !important;
+}
+.chat-actions {
+    position: absolute;
+    bottom: -30px;
+    right: 5px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 5px;
+    display: none !important;
+    z-index: 1;
+}
+.edit-btn, .delete-btn {
+    background-color: #fff;
+    border: none;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.edit-btn:hover, .delete-btn:hover {
+    background-color: #f0f0f0;
+}
+#edit-annotation{
+    display: none;
+}
 #attachment{
     display: none;
 }
 #attachment-preview{
     width: 60px;
     height: 60px;
+    display:none;
 }
 .input-area{
     max-height: 300px;
@@ -65,6 +101,6 @@
     height: 100px;
 }
 #content{
-    height: 20px;
+    height: 54px;
     line-height: 20px;
 }

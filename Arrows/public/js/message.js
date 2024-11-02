@@ -2,6 +2,10 @@ class Message {
 
     constructor(){
         this.deviceType = null;
+        this.roomMessages = [];
+        this.editMode = false;
+        this.editMessageId = null;
+
         $('.input-area').hide();
         this.setHandler();
         $(window).trigger('refresh');
@@ -41,6 +45,8 @@ class Message {
 
         $('#clear-chat-room').on('click', (e) => {
             roomList.currentOpenRoomId = null;
+            this.roomMessages = [];
+            this.toggleEditMode(false);
             $('#chat').empty();
             $('#chat-room-name').text(`チャットルームを選択してくだい`);
             $('.input-area').hide();
@@ -65,6 +71,14 @@ class Message {
             $('#attachment').click();
         });
 
+        $('#edit-cancel-link').on('click', (e) => {
+            this.toggleEditMode(false);
+        });
+
+        $('#edit-submit-link').on('click', (e) => {
+            this.postMessage();
+        });
+
         $('#post_message_btn').on('click', (e)=>{
             this.postMessage();
         });
@@ -79,7 +93,8 @@ class Message {
         $('#content').on('input', (e) => {
             const isScrolledChatArea = isScrollBottom($('#chat'));
             const lineHeight = parseInt($(e.target).css('lineHeight'));
-            const lines = ($(e.target).val() + '\n').match(/\n/g).length;
+            let lines = ($(e.target).val() + '\n').match(/\n/g).length;
+            lines = lines > 1 ? lines : 2;
             const setHeight = lines > 10 ? 200 : lineHeight * lines;
             $(e.target).height(setHeight);
             // チャットエリアが最下部の時は追従させる
@@ -88,76 +103,163 @@ class Message {
             }
         });
 
-        $('#chat-room').on('loadmessage', (e, data) => {
+        $('#chat-room').on('loadmessage', async (e, data) => {
             $('#chat').empty();
+            this.roomMessages = [];
+            this.toggleEditMode(false);
 
             const room = data.room;
             $('#chat-room-name').text(`${room.name}`);
             $('.input-area').show();
-            getMessage(room.id).done(function(data){
-                let chatHtml = '';
-                for(let i in data){
+            let chatHtml = '';
+            const response = await getMessageRequest(room.id);
+            for(let i in response){
+                chatHtml += `
+                    <div class="text-center">
+                        <span class="badge rounded-pill text-bg-secondary chat-date">${toDate(i)}</span>
+                    </div>
+                `;
+                const messages = response[i];
+                for(let messageIndex in messages){
+                    const message = messages[messageIndex];
+                    const user = room.getUser(message.user_id);
+                    const content = this.createContentHtml(message);
                     chatHtml += `
-                        <div class="text-center">
-                            <span class="badge rounded-pill text-bg-secondary chat-date">${toDate(i)}</span>
-                        </div>
+                        <p class="chat-talk ${user.id == authUser.id ? 'mytalk' : ''}" data-message-id="${message.id}">
+                            <span class="talk-icon">
+                                <img src="${user.image_url}"/>
+                            </span>
+                            <span class="talk-user text-gray">${user.name}</span>
+                            <span class="talk-timestamp text-gray">${toTime(message.created_at)}</span>
+                            <span class="talk-content ${user.id == authUser.id ? 'text-white' : ''}">
+                                ${content}
+                            </span>
+                            <span class="chat-actions">
+                                <button class="edit-btn">
+                                    <i class="fas fa-edit"></i>&nbsp;&nbsp;編集
+                                </button>
+                                <button class="delete-btn">
+                                    <i class="fas fa-trash"></i>&nbsp;&nbsp;削除
+                                </button>
+                            </span>
+                        </p>
                     `;
-                    const messages = data[i];
-                    for(let messageIndex in messages){
-                        const message = messages[messageIndex];
-                        const user = room.getUser(message.user_id);
-                        let content = replaceNewLineCode(message.content);
-                        if(message.attachment_url){
-                            if(content != ''){
-                                content += `
-                                    <span class="border-bottom pb-2"></span>
-                                    <img src="${appInfo.s3_url + message.attachment_url}" class="img-fluid chat-img pt-2">
-                                `;
-                            }
-                            else{
-                                content += `
-                                    <img src="${appInfo.s3_url + message.attachment_url}" class="img-fluid chat-img">
-                                `;
-                            }
-                        }
-                        chatHtml += `
-                            <p class="chat-talk ${user.id == authUser.id ? 'mytalk' : ''}">
-                                <span class="talk-icon">
-                                    <img src="${user.image_url}"/>
-                                </span>
-                                <span class="talk-user text-gray">${user.name}</span>
-                                <span class="talk-timestamp text-gray">${toTime(message.created_at)}</span>
-                                <span class="talk-content ${user.id == authUser.id ? 'text-white' : ''}">
-                                    ${content}
-                                </span>
-                            </p>
-                        `;
-                    }
+
+                    // 配列に登録
+                    this.roomMessages.push(message);
                 }
-                $('#chat').append(chatHtml);
-                // チャット画面でスクロールを最下部へ移動
-                srcollBottomObj($('#chat'));
+            }
+            $('#chat').append(chatHtml);
+            // チャット画面でスクロールを最下部へ移動
+            srcollBottomObj($('#chat'));
+        });
+
+        $(document).on('click', '.edit-btn', (event) => {
+            const messageId = $(event.target).parent().parent().data('message-id');
+            const message = this.getMessage(messageId);
+            if(!message){
+                return;
+            }
+
+            this.editMessageId = message.id;
+            this.toggleEditMode(true);
+            $('#content').val(message.content).trigger('input');
+        });
+
+        $(document).on('click', '.delete-btn', function(event){
+            Swal.fire({
+                title: '削除してもいいですか？',
+                text: "この操作は取り消せません",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'OK'
+            }).then(async (result) => {
+                if (result.value) {
+                    const messageId = $(event.target).parent().parent().data('message-id');
+                    const result = await deleteMessageRequest(messageId);
+                }
             });
         });
 
-        ioSocket.on("update", (data) => {
+        ioSocket.on("create", (data) => {
             this.appendMessage(data)
         });
+
+        ioSocket.on("update", (data) => {
+            this.updateMessage(data)
+        });
+
+        ioSocket.on("delete", (data) => {
+            this.deleteMessage(data);
+        })
     }
 
-    postMessage(){
+    toggleEditMode(enabled = true){
+        if(enabled){
+            this.editMode = true;
+            $('#edit-annotation').show();
+            return;
+        }
+        this.editMode = false;
+        this.editMessageId = null;
+        $('#edit-annotation').hide();
+        $('#content').val('').trigger('input');
+    }
+
+    getMessage(messageId){
+        return this.roomMessages.find(message => message.id == messageId);
+    }
+
+    getMessageIndex(messageId){
+        return this.roomMessages.findIndex(message => message.id == messageId);
+    }
+
+    async postMessage(){
         const room_id = roomList.currentOpenRoomId;
         const content = $('#content').val();
         const attachment = $('#attachment').prop('files')[0];
         if(!room_id || (!content && !attachment)){
             return;
         }
-        postMessageRequest(room_id, content, attachment);
+        let response = null;
+        if(this.editMode){
+            response = await updateMessageRequest(this.editMessageId, content);
+        }
+        else{
+            response = await postMessageRequest(room_id, content, attachment);
+        }
+        if(response.message == 'my blocked'){
+            Swal.fire({
+                title: "送信エラー",
+                text: "このユーザーをブロックしているため、送信できませんでした",
+                icon: "error",
+            });
+        }
+        else if(response.message == 'blocked'){
+            Swal.fire({
+                title: "送信エラー",
+                text: "あなたはブロックされているため、送信できませんでした",
+                icon: "error",
+            });
+        }
+        else{
+            if(this.editMode){
+                this.toggleEditMode(false);
+                return;
+            }
+            // メッセージを空にする
+            $('#attachment').val('').change();
+            $('#content').val('').trigger('input');
+            $('#content').focus();
+            // チャット画面でスクロールを最下部へ移動
+            srcollBottomObj($('#chat'));
+        }
     }
 
-    appendMessage(data){
+    updateLatestMessage(data){
         const room = roomList.getRoom(Number(data.room_id));
-        // ルームリストのメッセージを更新
         room.latest_message_id = data.id;
         room.latest_message = data;
         const $latestMessage = $(`#rooms_${room.id}`).children().children('.latest-message');
@@ -169,6 +271,30 @@ class Message {
                 $latestMessage.text(data.content);
             }
         }
+        return room;
+    }
+
+    createContentHtml(data){
+        let content = replaceNewLineCode(data.content);
+        if(data.attachment_url){
+            if(content != ''){
+                content += `
+                    <span class="border-bottom border-secondary-subtle pb-3"></span>
+                    <img src="${appInfo.s3_url + data.attachment_url}" class="img-fluid chat-img pt-3">
+                `;
+            }
+            else{
+                content += `
+                    <img src="${appInfo.s3_url + data.attachment_url}" class="img-fluid chat-img">
+                `;
+            }
+        }
+        return content;
+    }
+
+    appendMessage(data){
+        // ルームリストの最新メッセージを更新
+        const room = this.updateLatestMessage(data);
         // 現在開いているルームであるか
         if(roomList.currentOpenRoomId != room.id){
             return;
@@ -187,22 +313,9 @@ class Message {
                 </div>
             `;
         }
-        let content = replaceNewLineCode(data.content);
-        if(data.attachment_url){
-            if(content != ''){
-                content += `
-                    <span class="border-bottom pb-2"></span>
-                    <img src="${appInfo.s3_url + data.attachment_url}" class="img-fluid chat-img pt-2">
-                `;
-            }
-            else{
-                content += `
-                    <img src="${appInfo.s3_url + data.attachment_url}" class="img-fluid chat-img">
-                `;
-            }
-        }
+        const content = this.createContentHtml(data);
         chatHtml += `
-            <p class="chat-talk ${user.id == authUser.id ? 'mytalk' : ''}">
+            <p class="chat-talk ${user.id == authUser.id ? 'mytalk' : ''}" data-message-id="${data.id}">
                 <span class="talk-icon">
                     <img src="${user.image_url}"/>
                 </span>
@@ -211,14 +324,59 @@ class Message {
                 <span class="talk-content ${user.id == authUser.id ? 'text-white' : ''}">
                     ${content}
                 </span>
+                <span class="chat-actions">
+                    <button class="edit-btn">
+                        <i class="fas fa-edit"></i>&nbsp;&nbsp;編集
+                    </button>
+                    <button class="delete-btn">
+                        <i class="fas fa-trash"></i>&nbsp;&nbsp;削除
+                    </button>
+                </span>
             </p>
         `;
         $('#chat').append(chatHtml);
-        // メッセージを空にする
-        $('#attachment').val('').change();
-        $('#content').val('');
-        $('#content').focus();
-        // チャット画面でスクロールを最下部へ移動
-        srcollBottomObj($('#chat'));
+        // 配列に登録
+        this.roomMessages.push(data);
+    }
+
+    updateMessage(data){
+        // 当該ルームを開いている場合はメッセージを更新
+        if(roomList.currentOpenRoomId == data.room_id){
+            const content = this.createContentHtml(data);
+            const $message = $(`[data-message-id="${data.id}"]`);
+            $message.find('.talk-content').html(content);
+
+            // 配列を更新
+            const messageIndex = this.getMessageIndex(data.id);
+            if(messageIndex != -1){
+                this.roomMessages[messageIndex] = data;
+            }
+        }
+
+        // ルームリストの最新メッセージを更新
+        const room = roomList.getRoom(Number(data.room_id));
+        if(room.latest_message_id == data.id){
+            this.updateLatestMessage(data);
+        }
+    }
+
+    deleteMessage(data){
+        // 当該ルームを開いている場合はメッセージを削除
+        if(roomList.currentOpenRoomId == data.room_id){
+            const $message = $(`[data-message-id="${data.message_id}"]`);
+            $message.remove();
+
+            // 配列から削除
+            const messageIndex = this.getMessageIndex(data.message_id);
+            if(messageIndex != -1){
+                this.roomMessages.splice(messageIndex, 1);
+            }
+        }
+
+        // ルームリストの最新メッセージを更新
+        if(!data.latest_message){
+            return;
+        }
+        this.updateLatestMessage(data.latest_message);
     }
 }

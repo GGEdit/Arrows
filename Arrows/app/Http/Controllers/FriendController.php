@@ -25,11 +25,13 @@ class FriendController extends Controller
     }
 
     public function search(Request $request){
-        if($request->username == $this->auth->username){
+        if($request->username == $this->auth->username || $request->username == $this->auth->email){
             $errMessage = '自分自身を追加することは出来ません';
             return view('/friend/index', compact('errMessage'));
         }
-        $user = User::where('username', $request->username)->first();
+        $user = User::where('username', $request->username)
+            ->orWhere('email', $request->username)
+            ->first();
         if($user == NULL){
             $errMessage = 'お探しのユーザーは見つかりませんでした';
             return view('/friend/index', compact('errMessage'));

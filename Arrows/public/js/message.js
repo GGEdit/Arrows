@@ -347,6 +347,8 @@ class Message {
         if(roomList.currentOpenRoomId != room.id){
             return;
         }
+        // 配列に登録
+        this.roomMessages.push(data);
         // チャットルームの更新
         let chatHtml = '';
         const date = toDate(data.created_at);
@@ -382,9 +384,17 @@ class Message {
                 </span>
             </p>
         `;
+
+        // 最下部までスクロールしているか
+        const isScrolledChatArea = isScrollBottom($('#chat'));
+
+        // チャットルームにメッセージを追加
         $('#chat').append(chatHtml);
-        // 配列に登録
-        this.roomMessages.push(data);
+
+        // チャット画面でスクロールを最下部へ移動
+        if(isScrolledChatArea){
+            srcollBottomObj($('#chat'));
+        }
     }
 
     updateMessage(data){

@@ -15,6 +15,8 @@ return [
     'cipher' => 'AES-256-CBC',
     's3_url' => env('S3_URL'),
     'nsocket_server' => env('NSOCKET_SERVER'),
+    'meet_domain' => env('MEET_DOMAIN'),
+    'meet_server' => env('MEET_SERVER'),
 
     'providers' => [
         /*

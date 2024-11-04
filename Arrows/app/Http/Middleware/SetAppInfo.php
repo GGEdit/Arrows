@@ -26,10 +26,14 @@ class SetAppInfo
         $appVersion = config('app.app_version');
         $s3Url = config('app.s3_url');
         $nsocketServer = config('app.nsocket_server');
+        $meetDomain = config('app.meet_domain');
+        $meetServer = config('app.meet_server');
         $appInfos = [
             'app_version' => $appVersion,
             's3_url' => $s3Url,
             'nsocket_server' => $nsocketServer,
+            'meet_domain' => $meetDomain,
+            'meet_server' => $meetServer,
         ];
         $this->viewFactory->share('app_info', $appInfos);
         return $next($request);

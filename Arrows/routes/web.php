@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\MeetController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
@@ -43,4 +44,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::post('/friend', [FriendController::class, 'store']);
     Route::get('/friend/search', [FriendController::class, 'search']);
 
+    Route::get('/meet', [MeetController::class, 'index']);
+    Route::post('/meet/notify_conference', [MeetController::class, 'notifyConference']);
+    Route::post('/meet/notify_terminate_conference', [MeetController::class, 'notifyTerminateConference']);
 });

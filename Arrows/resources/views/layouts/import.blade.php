@@ -18,6 +18,7 @@
 <script src="{{ $app_info['nsocket_server'] }}/socket.io/socket.io.js"></script>
 <script src="/js/api/message.js?{{ $app_info['app_version'] }}"></script>
 <script src="/js/api/room.js?{{ $app_info['app_version'] }}"></script>
+<script src="/js/api/meet.js?{{ $app_info['app_version'] }}"></script>
 <script src="/js/common.js?{{ $app_info['app_version'] }}"></script>
 <script src="/js/user.js?{{ $app_info['app_version'] }}"></script>
 <script src="/js/room.js?{{ $app_info['app_version'] }}"></script>

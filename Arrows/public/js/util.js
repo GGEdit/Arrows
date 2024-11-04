@@ -32,3 +32,12 @@ function toTime(str){
     const dateTime = new Date(str);
     return `${(String)(dateTime.getHours()).padStart(2, '0')}:${(String)(dateTime.getMinutes()).padStart(2, '0')}`;
 }
+
+function randomString(length){
+    var c = "abcdefghijklmnopqrstuvwxyz0123456789";
+    var r = "";
+    for (var i = 0; i < length; i++) {
+        r += c[Math.floor(Math.random() * c.length)];
+    }
+    return r;
+}

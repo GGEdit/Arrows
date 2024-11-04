@@ -3,155 +3,72 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use App\Lib\HttpRequest;
-use App\Models\Message;
-use App\Models\Room;
+use App\Services\MessageService;
+use Exception;
 
 class MessageController extends Controller
 {
     private $auth;
+    private $messageService;
 
-    public function __construct(){
+    public function __construct(MessageService $messageService){
         $this->middleware(function ($request, $next){
             $this->auth = \Auth::user();
             return $next($request);
         });
+        $this->messageService = $messageService;
     }
 
     public function get($id){
-        $messages = Message::where('room_id', $id)->get()->groupBy('post_date');
-        return $messages;
+        try{
+            return $this->messageService->get(
+                $id
+            );
+        }
+        catch(Exception $e){
+            return response()->json(['status' => 'error', 'reason' => $e->getMessage()]);
+        }
     }
 
     public function store(Request $request){
-        $room = Room::find($request->room_id);
-        if(!$room){
-            return response()->json(['status' => 'error', 'reason' => 'room not found']);
+        try{
+            $this->messageService->store(
+                $this->auth->id,
+                $request->room_id,
+                $request->file('attachment'),
+                $request->content
+            );
+            return response()->json(['message' => 'success']);
         }
-
-        $attachmentUrl = NULL;
-        $attachment = $request->file('attachment');
-        if($attachment != NULL){
-            $attachmentUrl = Storage::disk('s3')->put(env('S3_OBJECT'), $attachment);
-            if(!$attachmentUrl){
-                return response()->json(['message' => 'failed upload attachment']);
-            }
+        catch(Exception $e){
+            return response()->json(['status' => 'error', 'reason' => $e->getMessage()]);
         }
-
-        $message = Message::create([
-            'room_id' => $request->room_id,
-            'user_id' => $this->auth->id,
-            'content' => $request->content,
-            'attachment_url' => $attachmentUrl,
-        ]);
-
-        // ルームの最新メッセージを更新
-        $room->update([
-            'latest_message_id' => $message->id
-        ]);
-
-        // Nodeに通知を飛ばす
-        $content = [
-            'room_name' => 'ROOM_' . $message->room_id,
-            'message' => [
-                'id' => $message->id,
-                'room_id' => $message->room_id,
-                'user_id' => $message->user_id,
-                'content' => $message->content,
-                'attachment_url' => $message->attachment_url,
-                'created_at' => $message->created_at,
-                'updated_at' => $message->updated_at,
-                'post_date' => $message->post_date,
-            ]
-        ];
-        $request = new HttpRequest();
-        $request->post_json(config('app.nsocket_server') . '/emit_create_chat', $content, [
-            'Content-Type' => 'text/html'
-        ]);
-
-        return response()->json(['message' => 'success']);
     }
 
     public function update(Request $request, $id){
-        $message = Message::find($id);
-        if(!$message){
-            return response()->json(['status' => 'error', 'reason' => 'message not found']);
+        try{
+            $this->messageService->update(
+                $id,
+                $this->auth->id,
+                $request->content
+            );
+            return response()->json(['message' => 'success']);
         }
-        if($message->user_id != $this->auth->id){
-            return response()->json(['status' => 'error', 'reason' => 'permission denied']);            
+        catch(Exception $e){
+            return response()->json(['status' => 'error', 'reason' => $e->getMessage()]);
         }
-        $message->update([
-            'content' => $request->content
-        ]);
-
-        // Nodeに通知を飛ばす
-        $content = [
-            'room_name' => 'ROOM_' . $message->room_id,
-            'message' => [
-                'id' => $message->id,
-                'room_id' => $message->room_id,
-                'user_id' => $message->user_id,
-                'content' => $message->content,
-                'attachment_url' => $message->attachment_url,
-                'created_at' => $message->created_at,
-                'updated_at' => $message->updated_at,
-                'post_date' => $message->post_date,
-            ]
-        ];
-        $request = new HttpRequest();
-        $request->post_json(config('app.nsocket_server') . '/emit_update_chat', $content, [
-            'Content-Type' => 'text/html'
-        ]);
-
-        return response()->json(['message' => 'success']);
     }
 
     public function delete($id){
-        $message = Message::find($id);
-        if(!$message){
-            return response()->json(['status' => 'error', 'reason' => 'message not found']);
+        try{
+            $this->messageService->delete(
+                $id,
+                $this->auth->id,
+            );
+            return response()->json(['message' => 'success']);
         }
-        if($message->user_id != $this->auth->id){
-            return response()->json(['status' => 'error', 'reason' => 'permission denied']);            
+        catch(Exception $e){
+            return response()->json(['status' => 'error', 'reason' => $e->getMessage()]);
         }
-
-        // メッセージ削除
-        $message->delete();
-
-        // 最新メッセージに登録されている場合は更新
-        $room = Room::where('id', $message->room_id)
-            ->first();
-        if($room->latest_message_id == $message->id){
-            $latestMessage = Message::where('room_id', $room->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            $room->update([
-                'latest_message_id' => $latestMessage ? $latestMessage->id : NULL
-            ]);
-        }
-
-        // Nodeに通知を飛ばす
-        $content = [
-            'room_id' => $message->room_id,
-            'room_name' => 'ROOM_' . $message->room_id,
-            'message_id' => $message->id
-        ];
-        if(isset($latestMessage) && $latestMessage){
-            $content['latest_message'] = [
-                'id' => $latestMessage->id,
-                'room_id' => $latestMessage->room_id,
-                'user_id' => $latestMessage->user_id,
-                'content' => $latestMessage->content,
-                'attachment_url' => $latestMessage->attachment_url,
-                'created_at' => $latestMessage->created_at
-            ];
-        }
-        $request = new HttpRequest();
-        $request->post_json(config('app.nsocket_server') . '/emit_delete_chat', $content, [
-            'Content-Type' => 'text/html'
-        ]);
-
-        return response()->json(['status' => 'ok']);
     }
 }

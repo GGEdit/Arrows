@@ -40,18 +40,31 @@ class Message {
             $('#chat-room').outerHeight(winH);
             $('.room-list').outerHeight(winH);
             // 戻るボタン表示
-            $('#clear-chat-room').toggle(roomList.currentOpenRoomId != null);
+            $('#clear-chat-room-icon').toggle(roomList.currentOpenRoomId != null);
+            // Web会議ボタン表示
+            this.showMeetButton();
         });
 
-        $('#clear-chat-room').on('click', (e) => {
-            roomList.currentOpenRoomId = null;
+        $('#clear-chat-room-icon').on('click', (e) => {
+            roomList.closeRoom();
             this.roomMessages = [];
             this.toggleEditMode(false);
             $('#chat').empty();
             $('#chat-room-name').text(`チャットルームを選択してくだい`);
             $('.input-area').hide();
-            $('.room-selected').removeClass('room-selected');
             $(window).trigger('refresh');
+        });
+
+        $('#web-meeting-btn').on('click', (e) => {
+            this.startConference();
+        });
+
+        $('#join-web-meeting-btn').on('click', (e) => {
+            this.joinConference(roomList.currentOpenRoomId, roomList.currentOpenRoom.opening_meet.meet_name);
+        });
+
+        $('#terminate-web-meeting-btn').on('click', (e) => {
+            this.terminateConference();
         });
 
         $('#attachment').on('change', (e) => {
@@ -167,6 +180,11 @@ class Message {
         });
 
         $(document).on('click', '.delete-btn', function(event){
+            const messageId = $(event.target).parent().parent().data('message-id');
+            if(!messageId){
+                return;
+            }
+
             Swal.fire({
                 title: '削除してもいいですか？',
                 text: "この操作は取り消せません",
@@ -177,7 +195,6 @@ class Message {
                 confirmButtonText: 'OK'
             }).then(async (result) => {
                 if (result.value) {
-                    const messageId = $(event.target).parent().parent().data('message-id');
                     const result = await deleteMessageRequest(messageId);
                 }
             });
@@ -194,6 +211,14 @@ class Message {
         ioSocket.on("delete", (data) => {
             this.deleteMessage(data);
         })
+
+        ioSocket.on("notify_conference", (data) => {
+            this.notifyConference(data);
+        })
+
+        ioSocket.on("notify_terminate_conference", (data) => {
+            this.notifyTerminateConference(data);
+        })
     }
 
     toggleEditMode(enabled = true){
@@ -206,6 +231,29 @@ class Message {
         this.editMessageId = null;
         $('#edit-annotation').hide();
         $('#content').val('').trigger('input');
+    }
+
+    showMeetButton(){
+        if(!roomList.currentOpenRoomId || roomList.currentOpenRoom.type == RoomType.MY_MESSAGE){
+            $('#web-meeting-btn').hide();
+            return;
+        }
+        // 会議中かどうか
+        if(!roomList.currentOpenRoom.opening_meet_id){
+            $('#web-meeting-btn').show();
+            $('#join-web-meeting-btn').hide();
+            $('#terminate-web-meeting-btn').hide();
+            return;
+        }
+        if(roomList.currentOpenRoom.opening_meet.owner_id == authUser.id){
+            $('#web-meeting-btn').hide();
+            $('#join-web-meeting-btn').hide();
+            $('#terminate-web-meeting-btn').show();
+            return;
+        }
+        $('#web-meeting-btn').hide();
+        $('#join-web-meeting-btn').show();
+        $('#terminate-web-meeting-btn').hide();
     }
 
     getMessage(messageId){
@@ -378,5 +426,89 @@ class Message {
             return;
         }
         this.updateLatestMessage(data.latest_message);
+    }
+
+    startConference(){
+        // localStorage設定
+        localStorage.setItem('is_owner', 1);
+        localStorage.setItem('room_id', roomList.currentOpenRoomId);
+        localStorage.setItem('meet_name', null);
+        // Meetウィンドウを開く
+        window.open("/meet", "Meet", "_blank", "height=1920,width=1080");
+    }
+
+    joinConference(room_id, meet_name){
+        // localStorage設定
+        localStorage.setItem('is_owner', 0);
+        localStorage.setItem('room_id', room_id);
+        localStorage.setItem('meet_name', meet_name);
+        // Meetウィンドウを開く
+        window.open("/meet", "Meet", "_blank", "height=1920,width=1080");
+    }
+
+    terminateConference(){
+        Swal.fire({
+            title: 'オンライン会議を終了しますか？',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'OK',
+        }).then(async (result) => {
+            if (result.value) {
+                // localStorage設定
+                localStorage.setItem('is_owner', 0);
+                localStorage.setItem('room_id', null);
+                localStorage.setItem('meet_name', null);
+
+                const room = roomList.currentOpenRoom;
+                await notifyTerminateConferenceRequest(room.id, room.opening_meet.meet_name);
+            }
+        });
+    }
+
+    notifyConference(data){
+        // ルームリスト更新
+        const room = roomList.getRoom(Number(data.room_id));
+        room.opening_meet_id = data.id;
+        room.opening_meet = data;
+
+        // 当該ルームを開いている場合はMeetボタンを更新
+        if(roomList.currentOpenRoomId == data.room_id){
+            this.showMeetButton();
+        }
+
+        // オーナーではない場合は着信アラートを表示
+        if(room.opening_meet.owner_id != authUser.id){
+            Swal.fire({
+                title: 'オンライン会議着信',
+                html: `
+                        ルーム名: ${room.name}
+                        <br>
+                        主催者: ${room.opening_meet.owner.name}
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: '参加する'
+            }).then((result) => {
+                if (result.value) {
+                    this.joinConference(room.id, room.opening_meet.meet_name);
+                }
+            });
+        }
+    }
+
+    notifyTerminateConference(data){
+        // ルームリスト更新
+        const room = roomList.getRoom(Number(data.room_id));
+        room.opening_meet_id = null;
+        room.opening_meet = null;
+
+        // 当該ルームを開いている場合はMeetボタンを更新
+        if(roomList.currentOpenRoomId == data.room_id){
+            this.showMeetButton();
+        }
     }
 }

@@ -21,9 +21,22 @@
         </div>
         <div class="col-md-8">
             <div id="chat-room" class="card">
-                <div class="card-header">
-                    <i class="fas fa-chevron-circle-left" id="clear-chat-room">&nbsp;&nbsp;</i>
-                    <strong id="chat-room-name">チャットルームを選択してくだい</strong>
+                <div class="card-header d-flex align-items-center">
+                    <div class="clear-chat-room">
+                        <i class="fas fa-chevron-circle-left" id="clear-chat-room-icon">&nbsp;&nbsp;</i>
+                        <strong id="chat-room-name">チャットルームを選択してくだい</strong>
+                    </div>
+                    <div class="meet-btn">
+                        <button type="button" id="web-meeting-btn" class="btn btn-sm btn-success">
+                            <i class="fas fa-microphone-alt"></i>&nbsp;&nbsp;開始
+                        </button>
+                        <button type="button" id="join-web-meeting-btn" class="btn btn-sm btn-warning text-white">
+                            <i class="fas fa-play-circle"></i>&nbsp;&nbsp;進行中の会議に参加
+                        </button>
+                        <button type="button" id="terminate-web-meeting-btn" class="btn btn-sm btn-danger">
+                            <i class="fas fa-times-circle"></i>&nbsp;&nbsp;会議を終了
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body overflow-auto" id="chat"></div>
                 <div class="card-footer text-muted input-area">

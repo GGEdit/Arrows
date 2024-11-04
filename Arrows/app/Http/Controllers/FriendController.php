@@ -3,21 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Consts\RoomType;
-use App\Models\Friend;
-use App\Models\User;
-use App\Models\Room;
-use App\Models\RoomMember;
+use App\Services\FriendService;
+use Exception;
 
 class FriendController extends Controller
 {
     private $auth;
+    private $friendService;
 
-    public function __construct(){
+    public function __construct(FriendService $friendService){
         $this->middleware(function ($request, $next){
             $this->auth = \Auth::user();
             return $next($request);
         });
+        $this->friendService = $friendService;
     }
 
     public function index(){
@@ -25,80 +24,47 @@ class FriendController extends Controller
     }
 
     public function search(Request $request){
-        if($request->username == $this->auth->username || $request->username == $this->auth->email){
-            $errMessage = '自分自身を追加することは出来ません';
+        try{
+            $response = $this->friendService->search(
+                $this->auth,
+                $request->username
+            );
+            $user = $response['user'];
+            $isFriend = $response['isFriend'];
+            return view('/friend/add_me', compact('user', 'isFriend'));
+        }
+        catch(Exception $e){
+            $errMessage = $e->getMessage();
             return view('/friend/index', compact('errMessage'));
         }
-        $user = User::where('username', $request->username)
-            ->orWhere('email', $request->username)
-            ->first();
-        if($user == NULL){
-            $errMessage = 'お探しのユーザーは見つかりませんでした';
-            return view('/friend/index', compact('errMessage'));
-        }
-        $isFriend = Friend::where('user_id', $this->auth->id)->where('friend_id', $user->id)->exists();
-        return view('/friend/index', compact('user', 'isFriend'));
     }
 
     public function addMe($username){
-        $user = User::where('username', $username)->first();
-        if($user == NULL){
-            $errMessage = 'お探しのユーザーは見つかりませんでした';
+        try{
+            $response = $this->friendService->addMe(
+                $this->auth,
+                $username
+            );
+            $user = $response['user'];
+            $isFriend = $response['isFriend'];
+            return view('/friend/add_me', compact('user', 'isFriend'));
+        }
+        catch(Exception $e){
+            $errMessage = $e->getMessage();
             return view('/friend/add_me', compact('errMessage'));
         }
-        $isFriend = false;
-        if($this->auth){
-            $isFriend = Friend::where('user_id', $this->auth->id)->where('friend_id', $user->id)->exists();
-        }
-        return view('/friend/add_me', compact('user', 'isFriend'));
     }
 
     public function store(Request $request){
-        $authId = $this->auth->id;
-        $user = User::find($request->id);
-        if($user == NULL){
-            return redirect()->back()->with('error', '存在しないユーザーです');
-        }
-        if($user->id == $authId){
-            return redirect()->back()->with('error', '自分自身を追加することは出来ません');
-        }
-        $isFriend = Friend::where('user_id', $authId)->where('friend_id', $user->id)->exists();
-        if($isFriend){
-            return redirect()->back()->with('error', '既に友だちに追加されています');
-        }
-        // 友だちを追加
-        Friend::create([
-            'user_id' => $authId,
-            'friend_id' => $user->id,
-        ]);
-        // 1対1のルームを作成
-        // すでに相手が作成しているか確認
-        $room = Room::where('type', RoomType::DIRECT_MESSAGE)
-                    ->where('owner_id', $user->id)
-                    ->where('id', function($query) use($authId) {
-                        $query->from('room_members')
-                            ->select('room_id')
-                            ->where('user_id', $authId);
-                    })->exists();
-        if(!$room){
-            $room = Room::create([
-                'name' => 'ダイレクトメッセージ',
-                'type' => RoomType::DIRECT_MESSAGE,
-                'owner_id' => $authId
-            ]);
-            RoomMember::insert(
-                [
-                    [
-                        'room_id' => $room->id,
-                        'user_id' => $authId
-                    ],
-                    [
-                        'room_id' => $room->id,
-                        'user_id' => $user->id
-                    ]
-                ]
+        try{
+            $this->friendService->store(
+                $this->auth,
+                $request->id
             );
+            return redirect()->back()->with('success', '友だちを追加しました');
         }
-        return redirect()->back()->with('success', '友だちを追加しました');
+        catch(Exception $e){
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

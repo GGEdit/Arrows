@@ -2,7 +2,22 @@
     background-color: #EBEFF4;
     padding: 1em 1em 2em 1em;
 }
-#clear-chat-room{
+.clear-chat-room{
+    margin-right: auto;
+}
+#clear-chat-room-icon{
+    display: none;
+}
+.meet-btn{
+    margin-left: auto;
+}
+#web-meeting-btn{
+    display: none;
+}
+#join-web-meeting-btn{
+    display: none;
+}
+#terminate-web-meeting-btn{
     display: none;
 }
 .chat-talk {

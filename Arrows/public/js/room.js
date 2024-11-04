@@ -23,6 +23,10 @@ class Room {
         if(this.latest_message_id){
             this.latest_message = roomInfo.latest_message;
         }
+        this.opening_meet_id = roomInfo.opening_meet_id;
+        if(this.opening_meet_id){
+            this.opening_meet = roomInfo.opening_meet;
+        }
     }
 
     getPartner(my){
@@ -51,6 +55,7 @@ class Room {
 class RoomList {
     constructor(){
         this.items = [];
+        this.currentOpenRoom = null;
         this.currentOpenRoomId = null;
         this.setHandler();
         this.load();
@@ -67,6 +72,7 @@ class RoomList {
             $('.room-selected').removeClass('room-selected');
 
             const room = this.getRoom(room_id);
+            this.currentOpenRoom = room;
             this.currentOpenRoomId = room_id;
             $(e.currentTarget).addClass('room-selected');
             $('#chat-room').trigger('loadmessage', {room: room});
@@ -160,5 +166,11 @@ class RoomList {
             return;
         }
         return room[0];
+    }
+
+    closeRoom(){
+        this.currentOpenRoom = null;
+        this.currentOpenRoomId = null;
+        $('.room-selected').removeClass('room-selected');
     }
 }

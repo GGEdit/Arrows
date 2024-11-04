@@ -10,7 +10,7 @@ class Room extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'type', 'owner_id', 'latest_message_id',
+        'name', 'type', 'owner_id', 'latest_message_id', 'opening_meet_id',
     ];
 
     public function members(){
@@ -19,5 +19,9 @@ class Room extends Model
 
     public function latestMessage(){
         return $this->belongsTo('App\Models\Message', 'latest_message_id');
+    }
+
+    public function openingMeet(){
+        return $this->belongsTo('App\Models\Meet', 'opening_meet_id');
     }
 }

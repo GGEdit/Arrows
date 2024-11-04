@@ -21,6 +21,7 @@ class CreateRoomsTable extends Migration
             $table->integer('type');
             $table->integer('owner_id');
             $table->integer('latest_message_id')->nullable();
+            $table->integer('opening_meet_id')->nullable();
             $table->timestamps();
         });
 

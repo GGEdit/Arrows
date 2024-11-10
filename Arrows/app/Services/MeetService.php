@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Consts\MessageType;
 use App\Lib\HttpRequest;
 use App\Models\Meet;
 use App\Models\Message;
@@ -27,6 +28,7 @@ class MeetService
             'room_id' => $room_id,
             'user_id' => $user_id,
             'content' => '📞 オンライン会議を開始しました',
+            'message_type' => MessageType::SYSTEM_MESSAGE
         ]);
 
         // ルームModel更新
@@ -46,6 +48,7 @@ class MeetService
                 'user_id' => $message->user_id,
                 'content' => $message->content,
                 'attachment_url' => $message->attachment_url,
+                'message_type' => $message->message_type,
                 'created_at' => $message->created_at,
                 'updated_at' => $message->updated_at,
                 'post_date' => $message->post_date,
@@ -75,16 +78,24 @@ class MeetService
         if($meet->owner_id != $user_id){
             throw new Exception('permission denied');       
         }
+        
+        $room = Room::find($meet->room_id);
+        if($room == NULL){
+            throw new Exception('room not found');
+        }
+        if($room->opening_meet_id == NULL){
+            throw new Exception('meet already terminated');
+        }
 
         // オンライン会議終了メッセージを作成
         $message = Message::create([
             'room_id' => $room_id,
             'user_id' => $user_id,
             'content' => '📞 オンライン会議が終了しました',
+            'message_type' => MessageType::SYSTEM_MESSAGE
         ]);
 
         // ルームModel更新
-        $room = Room::find($meet->room_id);
         $room->update([
             'opening_meet_id' => NULL,
             'latest_message_id' => $message->id
@@ -100,6 +111,7 @@ class MeetService
                 'user_id' => $message->user_id,
                 'content' => $message->content,
                 'attachment_url' => $message->attachment_url,
+                'message_type' => $message->message_type,
                 'created_at' => $message->created_at,
                 'updated_at' => $message->updated_at,
                 'post_date' => $message->post_date,

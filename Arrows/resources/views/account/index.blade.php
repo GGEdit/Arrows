@@ -3,7 +3,7 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card room-list">
+            <div class="card">
                 <div class="card-header text-center"><strong>アカウント情報編集</strong></div>
                 <div class="card-body overflow-auto">
                     <form action="/account/update" method="post" enctype="multipart/form-data">

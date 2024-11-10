@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="col-md-4">
-            <div class="card room-list">
+        <div class="col-md-3 room-list">
+            <div class="card">
                 <div class="card-header">
                     <i class="fas fa-list-ul"></i>&nbsp;&nbsp;
                     <strong>ルームリスト</strong>
@@ -19,7 +19,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-9 chat-room">
             <div id="chat-room" class="card">
                 <div class="card-header d-flex align-items-center">
                     <div class="clear-chat-room">

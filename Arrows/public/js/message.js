@@ -17,7 +17,7 @@ class Message {
             // PC・モバイル用表示設定
             const ww = $(window).width();
             let regHeight = 0;
-            if(ww >= 768){
+            if(ww >= 1376){
                 this.deviceType = DeviceType.PC;
                 regHeight = 100;
                 $('.room-list').show();
@@ -38,7 +38,7 @@ class Message {
             // 高さ調整
             const winH = $(window).height() - regHeight;
             $('#chat-room').outerHeight(winH);
-            $('.room-list').outerHeight(winH);
+            $('.room-list .card').outerHeight(winH);
             // 戻るボタン表示
             $('#clear-chat-room-icon').toggle(roomList.currentOpenRoomId != null);
             // Web会議ボタン表示
@@ -148,9 +148,11 @@ class Message {
                                 ${content}
                             </span>
                             <span class="chat-actions">
-                                <button class="edit-btn">
-                                    <i class="fas fa-edit"></i>&nbsp;&nbsp;編集
-                                </button>
+                                ${message.message_type == MessageType.DEFAULT ? `
+                                    <button class="edit-btn">
+                                        <i class="fas fa-edit"></i>&nbsp;&nbsp;編集
+                                    </button>` : ''
+                                }
                                 <button class="delete-btn">
                                     <i class="fas fa-trash"></i>&nbsp;&nbsp;削除
                                 </button>
@@ -375,9 +377,11 @@ class Message {
                     ${content}
                 </span>
                 <span class="chat-actions">
-                    <button class="edit-btn">
-                        <i class="fas fa-edit"></i>&nbsp;&nbsp;編集
-                    </button>
+                    ${data.message_type == MessageType.DEFAULT ? `
+                        <button class="edit-btn">
+                            <i class="fas fa-edit"></i>&nbsp;&nbsp;編集
+                        </button>` : ''
+                    }
                     <button class="delete-btn">
                         <i class="fas fa-trash"></i>&nbsp;&nbsp;削除
                     </button>

@@ -54,6 +54,7 @@ class MessageService
                 'user_id' => $message->user_id,
                 'content' => $message->content,
                 'attachment_url' => $message->attachment_url,
+                'message_type' => $message->message_type,
                 'created_at' => $message->created_at,
                 'updated_at' => $message->updated_at,
                 'post_date' => $message->post_date,
@@ -86,6 +87,7 @@ class MessageService
                 'user_id' => $message->user_id,
                 'content' => $message->content,
                 'attachment_url' => $message->attachment_url,
+                'message_type' => $message->message_type,
                 'created_at' => $message->created_at,
                 'updated_at' => $message->updated_at,
                 'post_date' => $message->post_date,
@@ -134,6 +136,7 @@ class MessageService
                 'user_id' => $latestMessage->user_id,
                 'content' => $latestMessage->content,
                 'attachment_url' => $latestMessage->attachment_url,
+                'message_type' => $message->message_type,
                 'created_at' => $latestMessage->created_at
             ];
         }

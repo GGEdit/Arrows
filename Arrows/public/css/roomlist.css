@@ -1,3 +1,17 @@
+@media (min-width: 1376px){
+    .room-list {
+        flex: 0 0 auto;
+        width: 25%;
+    }
+}
+
+@media (max-width: 1375px){
+    .room-list {
+        flex-shrink: 0;
+        width: 100%;
+    }
+}
+
 #room-list-card{
     background-color: #EBEFF4;
 }

@@ -12,7 +12,7 @@ html {
     min-height: 100%;
 }
 
-@media (min-width: 768px){
+@media (min-width: 1376px){
     .footer {
         display: none;
     }
@@ -21,7 +21,7 @@ html {
     }
 }
 
-@media (max-width: 767px){
+@media (max-width: 1375px){
     body {
         margin-bottom: 80px;
     }

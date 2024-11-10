@@ -1,3 +1,17 @@
+@media (min-width: 1376px){
+    .chat-room {
+        flex: 0 0 auto;
+        width: 75%;
+    }
+}
+
+@media (max-width: 1375px){
+    .chat-room {
+        flex-shrink: 0;
+        width: 100%;
+    }
+}
+
 #chat {
     background-color: #EBEFF4;
     padding: 1em 1em 2em 1em;
